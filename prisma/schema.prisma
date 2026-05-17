@@ -16,10 +16,87 @@ model User {
   email         String              @unique
   name          String?
   passwordHash  String
+  role          Role                @default(USER)
   emailVerified DateTime?
   createdAt     DateTime            @default(now())
   boards        Board[]
   tokens        VerificationToken[]
+  events        Event[]
+  tasks         Task[]
+  auditLogs     AuditLog[]
+  paste         Paste?
+}
+
+// Área de "cola" — um bloco por usuário onde ele cola texto e imagens.
+// `blocks` guarda um array JSON de itens { id, kind, value }.
+model Paste {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  blocks    Json     @default("[]")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+// Categoria de uma entrada de log de auditoria.
+enum LogCategory {
+  AUTH      // login, logout, registro
+  USER_MGMT // mudança de papel, exclusão de usuário
+  CONTENT   // criação/exclusão de quadros, eventos e tarefas
+}
+
+// Trilha de auditoria — uma linha por ação relevante do sistema.
+model AuditLog {
+  id          String      @id @default(cuid())
+  category    LogCategory
+  action      String // identificador curto, ex.: "auth.login"
+  description String // texto legível exibido na interface
+  actorId     String? // usuário que executou a ação (nulo = sistema/anônimo)
+  actorEmail  String? // snapshot do e-mail, sobrevive à exclusão do usuário
+  actorName   String?
+  targetEmail String? // alvo da ação, quando aplicável
+  ip          String?
+  metadata    Json?
+  createdAt   DateTime    @default(now())
+  actor       User?       @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([category])
+  @@index([createdAt])
+}
+
+model Event {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  startsAt    DateTime
+  endsAt      DateTime?
+  location    String?
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Task {
+  id        String    @id @default(cuid())
+  title     String
+  notes     String?
+  dueDate   DateTime?
+  done      Boolean   @default(false)
+  priority  Int       @default(2) // 1 = alta, 2 = média, 3 = baixa
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId])
 }
 
 model Board {

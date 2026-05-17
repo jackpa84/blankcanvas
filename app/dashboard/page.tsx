@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { isAdminUser } from "@/lib/admin";
 import { DashboardClient } from "@/components/DashboardClient";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +18,7 @@ export default async function DashboardPage() {
     }),
     prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { emailVerified: true },
+      select: { emailVerified: true, role: true, email: true },
     }),
   ]);
 
@@ -33,6 +34,7 @@ export default async function DashboardPage() {
       initialBoards={boards}
       userName={session.user.name ?? session.user.email ?? "Você"}
       emailVerified={Boolean(user?.emailVerified)}
+      isAdmin={user ? isAdminUser(user) : false}
     />
   );
 }

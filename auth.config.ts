@@ -13,7 +13,11 @@ export const authConfig = {
       const isLoggedIn = !!auth?.user;
       const path = nextUrl.pathname;
       const isProtected =
-        path.startsWith("/dashboard") || path.startsWith("/board");
+        path.startsWith("/dashboard") ||
+        path.startsWith("/board") ||
+        path.startsWith("/agenda") ||
+        path.startsWith("/cola") ||
+        path.startsWith("/admin");
 
       if (isProtected && !isLoggedIn) {
         return false; // redirected to the signIn page

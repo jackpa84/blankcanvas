@@ -12,8 +12,10 @@
     "db:studio": "dotenv -e .env.local -- prisma studio"
   },
   "dependencies": {
+    "@ai-sdk/react": "^3.0.186",
     "@excalidraw/excalidraw": "^0.18.1",
     "@prisma/client": "^6.19.3",
+    "ai": "^6.0.184",
     "bcryptjs": "^3.0.3",
     "next": "16.2.6",
     "next-auth": "^5.0.0-beta.31",

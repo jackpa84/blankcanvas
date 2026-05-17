@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { logEvent } from "@/lib/audit";
 
 // List the current user's boards.
 export async function GET() {
@@ -29,6 +30,16 @@ export async function POST() {
   const board = await prisma.board.create({
     data: { userId: session.user.id },
     select: { id: true },
+  });
+
+  await logEvent({
+    category: "CONTENT",
+    action: "board.create",
+    description: `${session.user.name ?? session.user.email} criou um quadro`,
+    actorId: session.user.id,
+    actorEmail: session.user.email,
+    actorName: session.user.name,
+    metadata: { boardId: board.id },
   });
 
   return NextResponse.json({ id: board.id }, { status: 201 });

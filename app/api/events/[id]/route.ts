@@ -3,28 +3,12 @@ import { Prisma } from "@prisma/client";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { boardUpdateSchema } from "@/lib/validations";
+import { eventUpdateSchema } from "@/lib/validations";
 import { logEvent } from "@/lib/audit";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
-// Fetch a single board (owner only).
-export async function GET(_req: Request, { params }: RouteContext) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  }
-
-  const { id } = await params;
-  const board = await prisma.board.findUnique({ where: { id } });
-  if (!board || board.userId !== session.user.id) {
-    return NextResponse.json({ error: "Quadro não encontrado" }, { status: 404 });
-  }
-
-  return NextResponse.json({ board });
-}
-
-// Update a board's title and/or canvas data (owner only).
+// Atualiza um evento (apenas do dono).
 export async function PATCH(req: Request, { params }: RouteContext) {
   const session = await auth();
   if (!session?.user) {
@@ -38,7 +22,7 @@ export async function PATCH(req: Request, { params }: RouteContext) {
     return NextResponse.json({ error: "Requisição inválida" }, { status: 400 });
   }
 
-  const parsed = boardUpdateSchema.safeParse(body);
+  const parsed = eventUpdateSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
       { error: parsed.error.issues[0]?.message ?? "Dados inválidos" },
@@ -46,28 +30,30 @@ export async function PATCH(req: Request, { params }: RouteContext) {
     );
   }
 
-  const updateData: { title?: string; data?: Prisma.InputJsonValue } = {};
-  if (parsed.data.title !== undefined) updateData.title = parsed.data.title;
-  if (parsed.data.data !== undefined) {
-    updateData.data = parsed.data.data as Prisma.InputJsonValue;
-  }
-  if (Object.keys(updateData).length === 0) {
+  const d = parsed.data;
+  const data: Prisma.EventUpdateManyMutationInput = {};
+  if (d.title !== undefined) data.title = d.title;
+  if (d.description !== undefined) data.description = d.description;
+  if (d.location !== undefined) data.location = d.location;
+  if (d.startsAt !== undefined) data.startsAt = d.startsAt;
+  if (d.endsAt !== undefined) data.endsAt = d.endsAt;
+
+  if (Object.keys(data).length === 0) {
     return NextResponse.json({ error: "Nada para atualizar" }, { status: 400 });
   }
 
   const { id } = await params;
-  const result = await prisma.board.updateMany({
+  const result = await prisma.event.updateMany({
     where: { id, userId: session.user.id },
-    data: updateData,
+    data,
   });
   if (result.count === 0) {
-    return NextResponse.json({ error: "Quadro não encontrado" }, { status: 404 });
+    return NextResponse.json({ error: "Evento não encontrado" }, { status: 404 });
   }
-
   return NextResponse.json({ ok: true });
 }
 
-// Delete a board (owner only).
+// Exclui um evento (apenas do dono).
 export async function DELETE(_req: Request, { params }: RouteContext) {
   const session = await auth();
   if (!session?.user) {
@@ -75,21 +61,21 @@ export async function DELETE(_req: Request, { params }: RouteContext) {
   }
 
   const { id } = await params;
-  const result = await prisma.board.deleteMany({
+  const result = await prisma.event.deleteMany({
     where: { id, userId: session.user.id },
   });
   if (result.count === 0) {
-    return NextResponse.json({ error: "Quadro não encontrado" }, { status: 404 });
+    return NextResponse.json({ error: "Evento não encontrado" }, { status: 404 });
   }
 
   await logEvent({
     category: "CONTENT",
-    action: "board.delete",
-    description: `${session.user.name ?? session.user.email} excluiu um quadro`,
+    action: "event.delete",
+    description: `${session.user.name ?? session.user.email} excluiu um evento`,
     actorId: session.user.id,
     actorEmail: session.user.email,
     actorName: session.user.name,
-    metadata: { boardId: id },
+    metadata: { eventId: id },
   });
 
   return NextResponse.json({ ok: true });

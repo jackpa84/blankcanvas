@@ -1,14 +1,15 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-canvas: #0a0a0c;
-  --color-surface: #141417;
-  --color-surface-2: #1c1c21;
-  --color-border: #2a2a31;
+  --color-canvas: #08080b;
+  --color-surface: #121216;
+  --color-surface-2: #1b1b21;
+  --color-border: #27272f;
   --color-accent: #7c5cff;
-  --color-accent-hover: #6b4ce6;
+  --color-accent-hover: #8f73ff;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-bricolage);
 }
 
 :root {
@@ -22,7 +23,11 @@ body {
 
 body {
   background-color: var(--color-canvas);
-  color: #e8e8ea;
+  background-image:
+    radial-gradient(46rem 32rem at 80% -10%, rgba(124, 92, 255, 0.14), transparent 62%),
+    radial-gradient(40rem 30rem at -8% 110%, rgba(56, 189, 248, 0.08), transparent 58%);
+  background-attachment: fixed;
+  color: #e9e9ec;
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -45,4 +50,58 @@ body {
   border-radius: 9999px;
   border: 2px solid transparent;
   background-clip: content-box;
+}
+
+/* Staggered entrance — high-impact page load */
+@keyframes fd-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes fd-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes fd-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+.fd-rise {
+  animation: fd-rise 0.62s cubic-bezier(0.22, 0.68, 0.2, 1) both;
+}
+.fd-fade {
+  animation: fd-fade 0.9s ease both;
+}
+.fd-float {
+  animation: fd-float 7s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fd-rise,
+  .fd-fade,
+  .fd-float {
+    animation: none;
+  }
+}
+
+/* Faint blueprint grid — atmosphere for hero sections */
+.fd-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.024) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.024) 1px, transparent 1px);
+  background-size: 46px 46px;
 }

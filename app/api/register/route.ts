@@ -6,6 +6,7 @@ import { registerSchema } from "@/lib/validations";
 import { createToken } from "@/lib/tokens";
 import { sendVerificationEmail } from "@/lib/mail";
 import { getBaseUrl } from "@/lib/url";
+import { logEvent } from "@/lib/audit";
 
 export async function POST(req: Request) {
   let body: unknown;
@@ -36,6 +37,15 @@ export async function POST(req: Request) {
   const passwordHash = await bcrypt.hash(password, 12);
   const user = await prisma.user.create({
     data: { name, email, passwordHash },
+  });
+
+  await logEvent({
+    category: "AUTH",
+    action: "user.register",
+    description: `Nova conta criada: ${name} (${email})`,
+    actorId: user.id,
+    actorEmail: user.email,
+    actorName: user.name,
   });
 
   // Envia o link de confirmação. Uma falha no e-mail não deve impedir

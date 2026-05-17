@@ -11,7 +11,7 @@ export default function ForgotPasswordPage() {
         <span className="grid size-8 place-items-center rounded-lg bg-accent text-white">
           ✎
         </span>
-        BlankCanvas
+        FreeDraw
       </Link>
 
       <div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-7 shadow-2xl shadow-black/40">

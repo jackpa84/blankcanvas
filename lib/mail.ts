@@ -5,7 +5,7 @@ const SMTP_PORT = Number(process.env.SMTP_PORT ?? "587");
 const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASSWORD = process.env.SMTP_PASSWORD;
 const SMTP_FROM =
-  process.env.SMTP_FROM ?? "BlankCanvas <ajuda@helpaste.com>";
+  process.env.SMTP_FROM ?? "FreeDraw <ajuda@helpaste.com>";
 
 const smtpReady = Boolean(SMTP_HOST && SMTP_USER && SMTP_PASSWORD);
 
@@ -61,7 +61,7 @@ function layout(opts: {
 <html lang="pt-BR">
 <body style="margin:0;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;color:#18181b;">
   <div style="max-width:480px;margin:0 auto;padding:32px 16px;">
-    <div style="font-size:20px;font-weight:bold;margin-bottom:24px;">✎ BlankCanvas</div>
+    <div style="font-size:20px;font-weight:bold;margin-bottom:24px;">✎ FreeDraw</div>
     <div style="background:#ffffff;border-radius:12px;padding:28px;">
       <h1 style="margin:0 0 12px;font-size:18px;">${opts.heading}</h1>
       <p style="margin:0 0 24px;font-size:14px;line-height:1.6;color:#52525b;">${opts.intro}</p>
@@ -69,7 +69,7 @@ function layout(opts: {
       <p style="margin:24px 0 0;font-size:12px;line-height:1.6;color:#a1a1aa;">${opts.footer}</p>
       <p style="margin:12px 0 0;font-size:12px;word-break:break-all;color:#a1a1aa;">${opts.buttonUrl}</p>
     </div>
-    <p style="margin:20px 0 0;font-size:11px;color:#a1a1aa;text-align:center;">BlankCanvas — seu quadro branco online</p>
+    <p style="margin:20px 0 0;font-size:11px;color:#a1a1aa;text-align:center;">FreeDraw — seu quadro branco online</p>
   </div>
 </body>
 </html>`;
@@ -79,24 +79,24 @@ export async function sendVerificationEmail(to: string, link: string) {
   const html = layout({
     heading: "Confirme seu e-mail",
     intro:
-      "Bem-vindo ao BlankCanvas! Clique no botão abaixo para confirmar seu endereço de e-mail e ativar sua conta.",
+      "Bem-vindo ao FreeDraw! Clique no botão abaixo para confirmar seu endereço de e-mail e ativar sua conta.",
     buttonLabel: "Confirmar e-mail",
     buttonUrl: link,
     footer:
       "Este link expira em 24 horas. Se você não criou esta conta, ignore este e-mail.",
   });
-  await deliver(to, "Confirme seu e-mail — BlankCanvas", html, link);
+  await deliver(to, "Confirme seu e-mail — FreeDraw", html, link);
 }
 
 export async function sendPasswordResetEmail(to: string, link: string) {
   const html = layout({
     heading: "Redefinir sua senha",
     intro:
-      "Recebemos um pedido para redefinir a senha da sua conta BlankCanvas. Clique no botão abaixo para escolher uma nova senha.",
+      "Recebemos um pedido para redefinir a senha da sua conta FreeDraw. Clique no botão abaixo para escolher uma nova senha.",
     buttonLabel: "Redefinir senha",
     buttonUrl: link,
     footer:
       "Este link expira em 1 hora. Se você não pediu a redefinição, ignore este e-mail — sua senha continua a mesma.",
   });
-  await deliver(to, "Redefinir sua senha — BlankCanvas", html, link);
+  await deliver(to, "Redefinir sua senha — FreeDraw", html, link);
 }
