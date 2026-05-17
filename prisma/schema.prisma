@@ -1,0 +1,52 @@
+// Prisma schema — BlankCanvas
+// docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+model User {
+  id            String              @id @default(cuid())
+  email         String              @unique
+  name          String?
+  passwordHash  String
+  emailVerified DateTime?
+  createdAt     DateTime            @default(now())
+  boards        Board[]
+  tokens        VerificationToken[]
+}
+
+model Board {
+  id        String   @id @default(cuid())
+  title     String   @default("Quadro sem título")
+  data      Json?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+enum TokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+model VerificationToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  type      TokenType
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
