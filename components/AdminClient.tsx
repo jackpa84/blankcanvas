@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 
@@ -31,13 +31,53 @@ export type AdminLog = {
   createdAt: string;
 };
 
-type Tab = "users" | "perms" | "logs";
+type Tab = "users" | "perms" | "logs" | "emails";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "users", label: "Usuários" },
   { id: "perms", label: "Permissões" },
   { id: "logs", label: "Logs" },
+  { id: "emails", label: "E-mails" },
 ];
+
+type ResendEmail = {
+  id: string;
+  to: string[];
+  from: string;
+  subject: string;
+  created_at: string;
+  last_event: string;
+};
+
+type ResendDomain = {
+  id: string;
+  name: string;
+  status: string;
+  region: string;
+};
+
+type EmailsState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "unavailable" }
+  | { status: "error"; message: string }
+  | { status: "ready"; emails: ResendEmail[]; domains: ResendDomain[] };
+
+const EVENT_BADGE: Record<string, string> = {
+  delivered: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
+  sent: "border-sky-500/30 bg-sky-500/10 text-sky-300",
+  bounced: "border-red-500/30 bg-red-500/10 text-red-300",
+  complained: "border-red-500/30 bg-red-500/10 text-red-300",
+  delivery_delayed: "border-amber-500/30 bg-amber-500/10 text-amber-300",
+  opened: "border-violet-500/30 bg-violet-500/10 text-violet-200",
+  clicked: "border-violet-500/30 bg-violet-500/10 text-violet-200",
+};
+
+function eventBadge(ev: string): string {
+  return (
+    EVENT_BADGE[ev] ?? "border-border bg-surface-2 text-zinc-300"
+  );
+}
 
 const CATEGORY: Record<
   Category,
@@ -76,6 +116,48 @@ export function AdminClient({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [logFilter, setLogFilter] = useState<Category | "ALL">("ALL");
+  const [emailsState, setEmailsState] = useState<EmailsState>({
+    status: "idle",
+  });
+
+  const loadEmails = useCallback(async () => {
+    setEmailsState({ status: "loading" });
+    try {
+      const res = await fetch("/api/admin/emails", { cache: "no-store" });
+      const data = (await res.json().catch(() => null)) as
+        | {
+            available?: boolean;
+            emails?: ResendEmail[];
+            domains?: ResendDomain[];
+            error?: string;
+          }
+        | null;
+      if (!res.ok) {
+        throw new Error(data?.error ?? `Falha ao consultar (${res.status}).`);
+      }
+      if (!data?.available) {
+        setEmailsState({ status: "unavailable" });
+        return;
+      }
+      setEmailsState({
+        status: "ready",
+        emails: data.emails ?? [],
+        domains: data.domains ?? [],
+      });
+    } catch (err) {
+      setEmailsState({
+        status: "error",
+        message: err instanceof Error ? err.message : "Erro inesperado.",
+      });
+    }
+  }, []);
+
+  function openTab(next: Tab) {
+    setTab(next);
+    if (next === "emails" && emailsState.status === "idle") {
+      void loadEmails();
+    }
+  }
 
   const adminCount = users.filter((u) => u.role === "ADMIN").length;
 
@@ -219,7 +301,7 @@ export function AdminClient({
           {TABS.map((t) => (
             <button
               key={t.id}
-              onClick={() => setTab(t.id)}
+              onClick={() => openTab(t.id)}
               className={`rounded-lg px-4 py-1.5 text-sm font-medium transition ${
                 tab === t.id
                   ? "bg-surface-2 text-white"
@@ -330,6 +412,10 @@ export function AdminClient({
                 })}
               </ul>
             </>
+          )}
+
+          {tab === "emails" && (
+            <EmailsPanel state={emailsState} onReload={loadEmails} />
           )}
 
           {tab === "logs" && (
@@ -461,6 +547,103 @@ function FilterChip({
     >
       {children}
     </button>
+  );
+}
+
+/* ---------- Painel de e-mails (Resend) ---------- */
+
+function EmailsPanel({
+  state,
+  onReload,
+}: {
+  state: EmailsState;
+  onReload: () => void;
+}) {
+  return (
+    <div>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-zinc-400">
+          Últimos e-mails enviados via Resend (confirmação de cadastro e
+          recuperação de senha).
+        </p>
+        <button
+          onClick={onReload}
+          disabled={state.status === "loading"}
+          className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-zinc-300 transition hover:bg-surface-2 disabled:opacity-50"
+        >
+          {state.status === "loading" ? "Atualizando…" : "Atualizar"}
+        </button>
+      </div>
+
+      {state.status === "loading" && (
+        <p className="rounded-xl border border-dashed border-border bg-surface/50 px-4 py-12 text-center text-sm text-zinc-500">
+          Carregando…
+        </p>
+      )}
+
+      {state.status === "unavailable" && (
+        <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+          Resend não está configurado nesta ambiente (SMTP_PASSWORD ausente ou
+          não começa com <code>re_</code>).
+        </p>
+      )}
+
+      {state.status === "error" && (
+        <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          {state.message}
+        </p>
+      )}
+
+      {state.status === "ready" && (
+        <>
+          {state.domains.length > 0 && (
+            <div className="mb-4 flex flex-wrap gap-2">
+              {state.domains.map((d) => (
+                <span
+                  key={d.id}
+                  className={`rounded-lg border px-2.5 py-1 text-xs ${
+                    d.status === "verified"
+                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+                      : "border-amber-500/30 bg-amber-500/10 text-amber-300"
+                  }`}
+                >
+                  {d.name} · {d.status} · {d.region}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {state.emails.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-border bg-surface/50 px-4 py-12 text-center text-sm text-zinc-500">
+              Nenhum e-mail enviado ainda.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {state.emails.map((e) => (
+                <li
+                  key={e.id}
+                  className="flex flex-wrap items-start gap-3 rounded-xl border border-border bg-surface px-4 py-3"
+                >
+                  <span
+                    className={`mt-0.5 rounded border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide ${eventBadge(e.last_event)}`}
+                  >
+                    {e.last_event}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm text-zinc-200">
+                      {e.subject}
+                    </p>
+                    <p className="mt-1 truncate text-xs text-zinc-500">
+                      para {e.to.join(", ")} · {formatDateTime(e.created_at)}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
+    </div>
   );
 }
 
