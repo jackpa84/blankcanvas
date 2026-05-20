@@ -11,6 +11,7 @@ import { Prisma } from "@prisma/client";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { AGENDA_MODEL } from "@/lib/ai";
+import { describeAiError } from "@/lib/ai-errors";
 
 export const maxDuration = 30;
 
@@ -177,5 +178,10 @@ export async function POST(req: Request) {
     },
   });
 
-  return result.toUIMessageStreamResponse();
+  return result.toUIMessageStreamResponse({
+    onError: (error) => {
+      console.error("[agenda/chat] Falha na IA:", error);
+      return describeAiError(error);
+    },
+  });
 }

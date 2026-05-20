@@ -65,6 +65,26 @@ function formatDate(iso: string) {
   });
 }
 
+// Renderiza URLs como links clicáveis dentro de um texto plano.
+function linkify(text: string): React.ReactNode {
+  const parts = text.split(/(https?:\/\/[^\s)]+)/g);
+  return parts.map((part, i) =>
+    /^https?:\/\//.test(part) ? (
+      <a
+        key={i}
+        href={part}
+        target="_blank"
+        rel="noreferrer"
+        className="text-accent underline underline-offset-2 hover:text-accent-hover"
+      >
+        {part}
+      </a>
+    ) : (
+      <span key={i}>{part}</span>
+    ),
+  );
+}
+
 export function AgendaClient({
   initialEvents,
   initialTasks,
@@ -268,8 +288,9 @@ export function AgendaClient({
               </button>
             </div>
             <p className="mt-3 text-sm leading-relaxed text-zinc-300">
-              {summary ??
-                "Clique em “Gerar resumo” para a IA destacar o que é mais importante nos próximos 7 dias."}
+              {summary
+                ? linkify(summary)
+                : "Clique em “Gerar resumo” para a IA destacar o que é mais importante nos próximos 7 dias."}
             </p>
           </section>
 

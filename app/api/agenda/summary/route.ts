@@ -3,6 +3,7 @@ import { generateText } from "ai";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { AGENDA_MODEL } from "@/lib/ai";
+import { describeAiError } from "@/lib/ai-errors";
 
 export const maxDuration = 30;
 
@@ -78,9 +79,6 @@ Escreva um resumo curto (3 a 5 frases) destacando o que é mais urgente e qual d
     return Response.json({ summary: text });
   } catch (err) {
     console.error("[agenda/summary] Falha na IA:", err);
-    return Response.json(
-      { error: "Não foi possível gerar o resumo agora." },
-      { status: 502 },
-    );
+    return Response.json({ error: describeAiError(err) }, { status: 502 });
   }
 }

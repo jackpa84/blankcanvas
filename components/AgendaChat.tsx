@@ -20,6 +20,26 @@ const SUGGESTIONS = [
   "Tarefa: pagar contas até sexta",
 ];
 
+// Converte URLs em <a> clicáveis dentro de um texto plano.
+function linkify(text: string): React.ReactNode {
+  const parts = text.split(/(https?:\/\/[^\s)]+)/g);
+  return parts.map((part, i) =>
+    /^https?:\/\//.test(part) ? (
+      <a
+        key={i}
+        href={part}
+        target="_blank"
+        rel="noreferrer"
+        className="underline decoration-red-300/60 underline-offset-2 hover:text-red-200"
+      >
+        {part}
+      </a>
+    ) : (
+      <span key={i}>{part}</span>
+    ),
+  );
+}
+
 export function AgendaChat({ onChanged }: { onChanged: () => void }) {
   const [input, setInput] = useState("");
   const { messages, sendMessage, status, error } = useChat({
@@ -128,8 +148,11 @@ export function AgendaChat({ onChanged }: { onChanged: () => void }) {
         )}
 
         {error && (
-          <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">
-            Erro ao falar com a IA. Verifique se o AI Gateway está ativo.
+          <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs leading-relaxed text-red-300">
+            {linkify(
+              error.message ||
+                "Erro ao falar com a IA. Tente novamente em alguns segundos.",
+            )}
           </p>
         )}
       </div>
