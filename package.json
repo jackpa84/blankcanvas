@@ -12,7 +12,6 @@
     "db:studio": "dotenv -e .env.local -- prisma studio"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^3.0.78",
     "@ai-sdk/react": "^3.0.186",
     "@excalidraw/excalidraw": "^0.18.1",
     "@prisma/client": "^6.19.3",
