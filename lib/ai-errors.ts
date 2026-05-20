@@ -21,6 +21,18 @@ export function describeAiError(error: unknown): string {
     return `O AI Gateway da Vercel exige um cartão de crédito antes de responder (continua com créditos grátis). Adicione em ${ADD_CARD_URL} e tente de novo — não precisa redeploy.`;
   }
 
+  if (
+    haystack.includes("invalid_api_key") ||
+    haystack.includes("invalid x-api-key") ||
+    haystack.includes("authentication_error")
+  ) {
+    return "A chave da Anthropic (ANTHROPIC_API_KEY) está inválida ou ausente. Confira em console.anthropic.com e ajuste a variável na Vercel.";
+  }
+
+  if (haystack.includes("credit balance") || haystack.includes("billing")) {
+    return "Saldo da Anthropic insuficiente. Adicione créditos em console.anthropic.com/settings/billing.";
+  }
+
   if (haystack.includes("insufficient_quota") || haystack.includes("quota")) {
     return "Cota do AI Gateway esgotada. Verifique limites no painel da Vercel.";
   }
